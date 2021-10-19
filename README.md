@@ -21,12 +21,12 @@ $ cd src
 $ java -cp . es.usj.crypto.cipher.FeistelCipherApp
 
 Plaintext (ascii)   : Crypto
-Plaintext (binary)  : 10000110111001001111001011100000111010001101111
+Plaintext (binary)  : 010000110111001001111001011100000111010001101111
 -------------------------------------
-Ciphertext (binary) : 111000101110010010010111101001001010110011111111
-Ciphertext (ascii)  : âä¤¬ÿ
+Ciphertext (binary) : 001101100001011100101101001101010111010101011110
+Ciphertext (ascii)  : 6-5u^
 -------------------------------------
-Deciphered (binary) : 10000110111001001111001011100000111010001101111
+Deciphered (binary) : 010000110111001001111001011100000111010001101111
 Deciphered (ascii)  : Crypto
 ```
 
