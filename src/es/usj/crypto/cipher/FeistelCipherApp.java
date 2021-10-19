@@ -23,11 +23,14 @@ public class FeistelCipherApp {
         if (args.length > 0 && args[0] != null) {
             plaintext = args[0];
         }
-
         System.out.println("Plaintext (ascii)   : " + plaintext);
 
         // Convert ASCII Input string in binary string
         String binaryInput = asciiToBinary(plaintext);
+        // Add 0 bits in the beginning to complete 8-bit blocks
+        for (int i = 0; i < (binaryInput.length() % 8); i++) {
+            binaryInput = "0" + binaryInput;
+        }
         System.out.println("Plaintext (binary)  : " + binaryInput);
         System.out.println("-------------------------------------");
 
@@ -35,7 +38,7 @@ public class FeistelCipherApp {
         String binaryOutput = "";
         int index = 0;
         while (index < binaryInput.length()) {
-            binaryOutput += FeistelCipher.encrypt(binaryInput.substring(index, Math.min(index + 8, binaryInput.length())));
+            binaryOutput += FeistelCipher.encrypt(binaryInput.substring(index, index + 8));
             index += 8;
         }
         System.out.println("Ciphertext (binary) : " + binaryOutput);
@@ -49,12 +52,9 @@ public class FeistelCipherApp {
         String decryptedBinary = "";
         index = 0;
         while (index < binaryOutput.length()) {
-            decryptedBinary += FeistelCipher.decrypt(binaryOutput.substring(index, Math.min(index + 8, binaryOutput.length())));
+            decryptedBinary += FeistelCipher.decrypt(binaryOutput.substring(index, index + 8));
             index += 8;
         }
-
-        // Remove extra blocks from decrypted binary string
-        decryptedBinary = decryptedBinary.substring(0, decryptedBinary.length() - 1);
         System.out.println("Deciphered (binary) : " + decryptedBinary);
 
         // Convert Binary Output to string in ASCII
@@ -96,7 +96,7 @@ public class FeistelCipherApp {
      * Sample implementation for Feistel Network:
      * - Blocks of 8 bits
      * - 4 rounds of the algorithm (by default)
-     * - Function apply AND and XOR operation
+     * - Function apply AND to right bits and XOR operation to left bits
      * - Key space based in a map of 16 blocks (4 bits)
      */
     static class FeistelCipher {
@@ -117,11 +117,6 @@ public class FeistelCipherApp {
          * @return Ciphertext for the plaintext expressed as binary string
          */
         public static String encrypt(String message) {
-
-            // Blocks of 8 bits are required, complete if not large enough
-            while (message.length() < 8) {
-                message += "0";
-            }
 
             // Divide the message in blocks of 4 bits
             int messageMid = message.length() / 2;
