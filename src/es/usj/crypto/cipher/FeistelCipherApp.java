@@ -4,8 +4,8 @@ import java.math.BigInteger;
 import java.util.List;
 
 /**
- * Sample implementation for Feistel Network.
- * - Plaintext can be also passed as main args[0]
+ * Sample implementation for Feistel Network using AND operation as Function.
+ * - Plaintext can be also passed as command line args[0]
  *
  * This code has been only developed for teaching purposes (!)
  *
@@ -15,9 +15,10 @@ import java.util.List;
  */
 public class FeistelCipherApp {
 
+    // Default plaintext when no one is passed using program argument 0
     private static String plaintext = "Crypto";
 
-    public static void main(String... args) throws Exception {
+    public static void main(String... args) {
 
         // Take plaintext as first program argument when exists
         if (args.length > 0 && args[0] != null) {
@@ -26,39 +27,40 @@ public class FeistelCipherApp {
         System.out.println("Plaintext (ascii)   : " + plaintext);
 
         // Convert ASCII Input string in binary string
-        String binaryInput = asciiToBinary(plaintext);
-        // Add 0 bits in the beginning to complete 8-bit blocks
-        for (int i = 0; i < (binaryInput.length() % 8); i++) {
-            binaryInput = "0" + binaryInput;
+        // Add 0 bits in the beginning to complete 8-bit blocks (left-padding)
+        StringBuilder binaryInputBuilder = new StringBuilder(asciiToBinary(plaintext));
+        for (int i = 0; i < (binaryInputBuilder.length() % 8); i++) {
+            binaryInputBuilder.insert(0, "0");
         }
+        String binaryInput = binaryInputBuilder.toString();
         System.out.println("Plaintext (binary)  : " + binaryInput);
         System.out.println("-------------------------------------");
 
         // Apply Feistel encryption in blocks of 8 bits
-        String binaryOutput = "";
+        StringBuilder binaryOutput = new StringBuilder();
         int index = 0;
         while (index < binaryInput.length()) {
-            binaryOutput += FeistelCipher.encrypt(binaryInput.substring(index, index + 8));
+            binaryOutput.append(FeistelCipher.encrypt(binaryInput.substring(index, index + 8)));
             index += 8;
         }
         System.out.println("Ciphertext (binary) : " + binaryOutput);
 
         // Convert Binary Output string in ASCII
-        String ciphertext = binaryToAscii(binaryOutput);
+        String ciphertext = binaryToAscii(binaryOutput.toString());
         System.out.println("Ciphertext (ascii)  : " + ciphertext);
         System.out.println("-------------------------------------");
 
         // Apply Feistel decryption in blocks of 8 bits
-        String decryptedBinary = "";
+        StringBuilder decryptedBinary = new StringBuilder();
         index = 0;
         while (index < binaryOutput.length()) {
-            decryptedBinary += FeistelCipher.decrypt(binaryOutput.substring(index, index + 8));
+            decryptedBinary.append(FeistelCipher.decrypt(binaryOutput.substring(index, index + 8)));
             index += 8;
         }
         System.out.println("Deciphered (binary) : " + decryptedBinary);
 
         // Convert Binary Output to string in ASCII
-        String decrypted = binaryToAscii(decryptedBinary);
+        String decrypted = binaryToAscii(decryptedBinary.toString());
         System.out.println("Deciphered (ascii)  : " + decrypted);
 
     }
@@ -84,7 +86,7 @@ public class FeistelCipherApp {
      */
     private static String binaryToAscii(String binaryStr) {
         String hexStr = new BigInteger(binaryStr, 2).toString(16);
-        StringBuilder output = new StringBuilder("");
+        StringBuilder output = new StringBuilder();
         for (int i = 0; i < hexStr.length(); i += 2) {
             String str = hexStr.substring(i, i + 2);
             output.append((char) Integer.parseInt(str, 16));
@@ -104,7 +106,7 @@ public class FeistelCipherApp {
         // Number of rounds of the algorithm
         static int roundCount = 4;
 
-        // Key space
+        // Default Key Space
         static List<String> keys = List.of(
             "1110", "0100", "1101", "0001",
             "0010", "1111", "1011", "1000",
@@ -127,7 +129,7 @@ public class FeistelCipherApp {
             for (int roundIndex = 0; roundIndex < roundCount; roundIndex++) {
                 // Preserve original RIGHT part
                 String temp = right;
-                // Calculate the 4 bits to be applied to LEFT part
+                // Calculate the 4 bits to be applied to LEFT part (Function)
                 String functionText = AND(right, getSubKey(roundIndex));
                 // Apply XOR function in LEFT part and switch the result to the RIGHT
                 right = XOR(left, functionText);
@@ -153,7 +155,7 @@ public class FeistelCipherApp {
             for (int roundIndex = 0; roundIndex < roundCount; roundIndex++) {
                 // Preserve original LEFT part
                 String temp = left;
-                // Calculate the 4 bits to be applied to RIGHT part (reverse scheduled)
+                // Calculate the 4 bits to be applied to RIGHT part (Function, reverse scheduled!)
                 String functionText = AND(left, getSubKey(roundCount - roundIndex - 1));
                 // Apply XOR function in RIGHT part and switch the result to the LEFT
                 left = XOR(right, functionText);
