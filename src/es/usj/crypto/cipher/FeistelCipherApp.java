@@ -14,7 +14,7 @@ public class FeistelCipherApp {
 
     public static void main(String... args) {
         // Use command-line argument as plaintext if available
-        if (args.length > 0 && args[0] != null) {
+        if (args.length > 0) {
             plaintext = args[0];
         }
         System.out.println("Plaintext (ascii)   : " + plaintext);
@@ -25,7 +25,7 @@ public class FeistelCipherApp {
         System.out.println("-------------------------------------");
 
         // Encrypt the binary input using Feistel encryption
-        String binaryOutput = processInBlocks(binaryInput, FeistelCipher::encrypt);
+        String binaryOutput = processInBlocks(binaryInput, true);
         System.out.println("Ciphertext (binary) : " + binaryOutput);
 
         // Convert binary ciphertext to ASCII
@@ -34,7 +34,7 @@ public class FeistelCipherApp {
         System.out.println("-------------------------------------");
 
         // Decrypt the binary ciphertext using Feistel decryption
-        String decryptedBinary = processInBlocks(binaryOutput, FeistelCipher::decrypt);
+        String decryptedBinary = processInBlocks(binaryOutput, false);
         System.out.println("Deciphered (binary) : " + decryptedBinary);
 
         // Convert decrypted binary back to ASCII
@@ -70,27 +70,21 @@ public class FeistelCipherApp {
      * Pads a binary string to 8-bit block size.
      */
     private static String padTo8BitBlocks(String binaryStr) {
-        int paddingLength = 8 - (binaryStr.length() % 8);
+        int paddingLength = (8 - (binaryStr.length() % 8)) % 8; // Fixed padding calculation
         return "0".repeat(paddingLength) + binaryStr;
     }
 
     /**
-     * Processes binary strings in 8-bit blocks with the provided function.
+     * Processes binary strings in 8-bit blocks using the specified operation.
+     * If encrypt is true, it encrypts; otherwise, it decrypts.
      */
-    private static String processInBlocks(String binaryInput, FeistelOperation operation) {
+    private static String processInBlocks(String binaryInput, boolean encrypt) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < binaryInput.length(); i += 8) {
-            result.append(operation.apply(binaryInput.substring(i, i + 8)));
+            String block = binaryInput.substring(i, i + 8);
+            result.append(encrypt ? FeistelCipher.encrypt(block) : FeistelCipher.decrypt(block));
         }
         return result.toString();
-    }
-
-    /**
-     * Functional interface for Feistel operations (encrypt/decrypt).
-     */
-    @FunctionalInterface
-    private interface FeistelOperation {
-        String apply(String input);
     }
 
     /**
