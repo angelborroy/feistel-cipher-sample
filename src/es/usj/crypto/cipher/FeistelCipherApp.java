@@ -5,199 +5,167 @@ import java.util.List;
 
 /**
  * Sample implementation for Feistel Network using AND operation as Function.
- * - Plaintext can be also passed as command line args[0]
  *
- * This code has been only developed for teaching purposes (!)
- *
- * Built from source code available in
- * https://github.com/AlaaSallamI/Feistel-Cipher-in-Java/blob/master/FeistelCipher.java
- *
+ * This implementation is for educational purposes.
  */
 public class FeistelCipherApp {
 
-    // Default plaintext when no one is passed using program argument 0
+    // Default plaintext when none is provided as a program argument
     private static String plaintext = "Crypto";
 
     public static void main(String... args) {
-
-        // Take plaintext as first program argument when exists
+        // Use command-line argument as plaintext if available
         if (args.length > 0 && args[0] != null) {
             plaintext = args[0];
         }
         System.out.println("Plaintext (ascii)   : " + plaintext);
 
-        // Convert ASCII Input string in binary string
-        // Add 0 bits in the beginning to complete 8-bit blocks (left-padding)
-        StringBuilder binaryInputBuilder = new StringBuilder(asciiToBinary(plaintext));
-        for (int i = 0; i < (binaryInputBuilder.length() % 8); i++) {
-            binaryInputBuilder.insert(0, "0");
-        }
-        String binaryInput = binaryInputBuilder.toString();
+        // Convert plaintext to binary string (padded to 8-bit boundaries)
+        String binaryInput = padTo8BitBlocks(asciiToBinary(plaintext));
         System.out.println("Plaintext (binary)  : " + binaryInput);
         System.out.println("-------------------------------------");
 
-        // Apply Feistel encryption in blocks of 8 bits
-        StringBuilder binaryOutput = new StringBuilder();
-        int index = 0;
-        while (index < binaryInput.length()) {
-            binaryOutput.append(FeistelCipher.encrypt(binaryInput.substring(index, index + 8)));
-            index += 8;
-        }
+        // Encrypt the binary input using Feistel encryption
+        String binaryOutput = processInBlocks(binaryInput, FeistelCipher::encrypt);
         System.out.println("Ciphertext (binary) : " + binaryOutput);
 
-        // Convert Binary Output string in ASCII
-        String ciphertext = binaryToAscii(binaryOutput.toString());
+        // Convert binary ciphertext to ASCII
+        String ciphertext = binaryToAscii(binaryOutput);
         System.out.println("Ciphertext (ascii)  : " + ciphertext);
         System.out.println("-------------------------------------");
 
-        // Apply Feistel decryption in blocks of 8 bits
-        StringBuilder decryptedBinary = new StringBuilder();
-        index = 0;
-        while (index < binaryOutput.length()) {
-            decryptedBinary.append(FeistelCipher.decrypt(binaryOutput.substring(index, index + 8)));
-            index += 8;
-        }
+        // Decrypt the binary ciphertext using Feistel decryption
+        String decryptedBinary = processInBlocks(binaryOutput, FeistelCipher::decrypt);
         System.out.println("Deciphered (binary) : " + decryptedBinary);
 
-        // Convert Binary Output to string in ASCII
-        String decrypted = binaryToAscii(decryptedBinary.toString());
-        System.out.println("Deciphered (ascii)  : " + decrypted);
-
+        // Convert decrypted binary back to ASCII
+        String decryptedText = binaryToAscii(decryptedBinary);
+        System.out.println("Deciphered (ascii)  : " + decryptedText);
     }
 
     /**
-     * Convert text string in ASCII encoding to binary string
-     * @param asciiStr Text string in ASCII encoding
-     * @return binary string representing the asciiStr
+     * Converts an ASCII string to its binary representation.
      */
     private static String asciiToBinary(String asciiStr) {
-        char[] chars = asciiStr.toCharArray();
-        StringBuilder hex = new StringBuilder();
-        for (char ch : chars) {
-            hex.append(Integer.toHexString(ch));
+        StringBuilder binaryStr = new StringBuilder();
+        for (char ch : asciiStr.toCharArray()) {
+            String binaryChar = String.format("%8s", Integer.toBinaryString(ch)).replace(' ', '0');
+            binaryStr.append(binaryChar);
         }
-        return new BigInteger(hex.toString(), 16).toString(2);
+        return binaryStr.toString();
     }
 
     /**
-     * Convert binary string to text string in ASCII encoding
-     * @param binaryStr Binary string
-     * @return Text string in ASCII encoding representing the binaryStr
+     * Converts a binary string back to ASCII.
      */
     private static String binaryToAscii(String binaryStr) {
-        String hexStr = new BigInteger(binaryStr, 2).toString(16);
-        StringBuilder output = new StringBuilder();
-        for (int i = 0; i < hexStr.length(); i += 2) {
-            String str = hexStr.substring(i, i + 2);
-            output.append((char) Integer.parseInt(str, 16));
+        StringBuilder asciiStr = new StringBuilder();
+        for (int i = 0; i < binaryStr.length(); i += 8) {
+            String byteStr = binaryStr.substring(i, i + 8);
+            asciiStr.append((char) Integer.parseInt(byteStr, 2));
         }
-        return output.toString();
+        return asciiStr.toString();
     }
 
     /**
-     * Sample implementation for Feistel Network:
-     * - Blocks of 8 bits
-     * - 4 rounds of the algorithm (by default)
-     * - Function apply AND to right bits and XOR operation to left bits
-     * - Key space based in a map of 16 blocks (4 bits)
+     * Pads a binary string to 8-bit block size.
+     */
+    private static String padTo8BitBlocks(String binaryStr) {
+        int paddingLength = 8 - (binaryStr.length() % 8);
+        return "0".repeat(paddingLength) + binaryStr;
+    }
+
+    /**
+     * Processes binary strings in 8-bit blocks with the provided function.
+     */
+    private static String processInBlocks(String binaryInput, FeistelOperation operation) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < binaryInput.length(); i += 8) {
+            result.append(operation.apply(binaryInput.substring(i, i + 8)));
+        }
+        return result.toString();
+    }
+
+    /**
+     * Functional interface for Feistel operations (encrypt/decrypt).
+     */
+    @FunctionalInterface
+    private interface FeistelOperation {
+        String apply(String input);
+    }
+
+    /**
+     * Implementation of the Feistel cipher.
      */
     static class FeistelCipher {
 
-        // Number of rounds of the algorithm
-        static int roundCount = 4;
-
-        // Default Key Space
-        static List<String> keys = List.of(
-            "1110", "0100", "1101", "0001",
-            "0010", "1111", "1011", "1000",
-            "0011", "1010", "0110", "1100",
-            "0101", "1001", "0000", "0111");
+        private static final int ROUNDS = 4;
+        private static final List<String> KEYS = List.of(
+                "1110", "0100", "1101", "0001",
+                "0010", "1111", "1011", "1000",
+                "0011", "1010", "0110", "1100",
+                "0101", "1001", "0000", "0111"
+        );
 
         /**
-         * Get ciphered message from a plaintext
-         * @param message Plaintext to be ciphered expressed as binary string
-         * @return Ciphertext for the plaintext expressed as binary string
+         * Encrypts a block of 8 bits using Feistel network.
          */
-        public static String encrypt(String message) {
+        public static String encrypt(String block) {
+            String left = block.substring(0, 4);
+            String right = block.substring(4);
 
-            // Divide the message in blocks of 4 bits
-            int messageMid = message.length() / 2;
-            String left = message.substring(0, messageMid);
-            String right = message.substring(messageMid);
-
-            // Apply the algorithm for a number of rounds
-            for (int roundIndex = 0; roundIndex < roundCount; roundIndex++) {
-                // Preserve original RIGHT part
-                String temp = right;
-                // Calculate the 4 bits to be applied to LEFT part (Function)
-                String functionText = AND(right, getSubKey(roundIndex));
-                // Apply XOR function in LEFT part and switch the result to the RIGHT
-                right = XOR(left, functionText);
-                // Switch original RIGHT part to the LEFT
-                left = temp;
-            }
-            return left + "" + right;
-        }
-
-        /**
-         * Get plaintext message from a ciphertext
-         * @param message Ciphertext to be decrypted expressed as binary string
-         * @return Plaintext for the ciphertext expressed as binary string
-         */
-        public static String decrypt(String message) {
-
-            // Divide the message in blocks of 4 bits
-            int messageMid = message.length() / 2;
-            String left = message.substring(0, messageMid);
-            String right = message.substring(messageMid);
-
-            // Apply the algorithm for a number of rounds
-            for (int roundIndex = 0; roundIndex < roundCount; roundIndex++) {
-                // Preserve original LEFT part
-                String temp = left;
-                // Calculate the 4 bits to be applied to RIGHT part (Function, reverse scheduled!)
-                String functionText = AND(left, getSubKey(roundCount - roundIndex - 1));
-                // Apply XOR function in RIGHT part and switch the result to the LEFT
-                left = XOR(right, functionText);
-                // Switch original LEFT part to the RIGHT
-                right = temp;
+            for (int i = 0; i < ROUNDS; i++) {
+                String newRight = XOR(left, F(right, i));
+                left = right;
+                right = newRight;
             }
 
-            return left + "" + right;
+            return left + right;
         }
 
         /**
-         * Get a key from the key space modulo 16
-         * @param roundIndex current round index
-         * @return 4-bits binary key
+         * Decrypts a block of 8 bits using Feistel network.
          */
-        private static String getSubKey(int roundIndex) {
-            return keys.get(roundIndex % 16);
-        }
+        public static String decrypt(String block) {
+            String left = block.substring(0, 4);
+            String right = block.substring(4);
 
-        /**
-         * Apply AND (&) operation to every bit in left and right binary strings
-         */
-        private static String AND(String left, String right) {
-            StringBuilder stringBuilder = new StringBuilder();
-            for (int i = 0; i < left.length(); i++) {
-                // Convert the char to number subtracting char '0'
-                stringBuilder.append((left.charAt(i) - '0') & (right.charAt(i) - '0'));
+            for (int i = 0; i < ROUNDS; i++) {
+                String newLeft = XOR(right, F(left, ROUNDS - i - 1));
+                right = left;
+                left = newLeft;
             }
-            return stringBuilder.toString();
+
+            return left + right;
         }
 
         /**
-         * Apply XOR (^) operation to every bit in left and right binary strings
+         * Feistel function F, applying AND with the subkey.
          */
-        private static String XOR(String left, String right) {
-            StringBuilder stringBuilder = new StringBuilder();
-            for (int i = 0; i < left.length(); i++) {
-                // Convert the char to number subtracting char '0'
-                stringBuilder.append((left.charAt(i) - '0') ^ (right.charAt(i) - '0'));
-            }
-            return stringBuilder.toString();
+        private static String F(String halfBlock, int round) {
+            return AND(halfBlock, KEYS.get(round % KEYS.size()));
         }
 
+        /**
+         * Applies AND operation on two binary strings.
+         */
+        private static String AND(String a, String b) {
+            StringBuilder result = new StringBuilder();
+            for (int i = 0; i < a.length(); i++) {
+                result.append((a.charAt(i) - '0') & (b.charAt(i) - '0'));
+            }
+            return result.toString();
+        }
+
+        /**
+         * Applies XOR operation on two binary strings.
+         */
+        private static String XOR(String a, String b) {
+            StringBuilder result = new StringBuilder();
+            for (int i = 0; i < a.length(); i++) {
+                result.append((a.charAt(i) - '0') ^ (b.charAt(i) - '0'));
+            }
+            return result.toString();
+        }
     }
 }
