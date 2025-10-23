@@ -78,6 +78,41 @@ Notice: Blocks 0 and 1 are IDENTICAL! This is ECB's weakness.
 An attacker can see patterns in the plaintext by observing ciphertext.
 ```
 
+### Using Docker
+
+**Building the Docker Image**
+
+```bash
+docker build -t feistel-cipher .
+```
+
+**Running the Container**
+
+With default plaintext:
+```bash
+docker run feistel-cipher
+```
+
+With custom plaintext:
+```bash
+docker run feistel-cipher java -cp . es.usj.crypto.cipher.FeistelCipherApp "Hello World"
+```
+
+With multiple words:
+```bash
+docker run feistel-cipher java -cp . es.usj.crypto.cipher.FeistelCipherApp "Alice in Wonderland"
+```
+
+**What the Dockerfile Does**
+
+1. Uses OpenJDK 11 slim image - Minimal Java 11 runtime
+2. Copies source code - Brings in the `src/` directory
+3. Compiles the application - Runs `javac` to build the `.class` files
+4. Sets working directory - Changes to `src/` for proper classpath
+5. Defines default command - Runs with default plaintext if no arguments provided
+
+> The Dockerfile is intentionally simple and follows Docker best practices for educational projects!
+
 ### Custom Plaintext
 
 You can specify any plaintext as command-line arguments:
